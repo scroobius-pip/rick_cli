@@ -10,11 +10,17 @@ pub enum Operation {
     Root(Root), //Every operation starts with a root
     Name(Operand),
     Page(Operand),
-    Contains(Operand),
+     /// name of field, value field should contain
+    Contains(Operand, Operand),
     Length(Operand, Operand),
     Index(Operand),
-    Sort(Operand, Operand),
+    Sort(SortOperator, Operand),
     Pick(Operand),
+}
+
+pub enum SortOperator {
+    ASC,
+    DSC
 }
 
 pub struct OperationList(pub Vec<Operation>);
@@ -44,7 +50,6 @@ pub enum OperandEnum {
 
 pub struct Operand(pub OperandEnum);
 
-
 impl From<Operand> for f32 {
     fn from(operand: Operand) -> Self {
         match operand.0 {
@@ -63,23 +68,27 @@ impl From<&Operand> for f32 {
     }
 }
 
-impl From<Operand> for &str {
-    fn from(operand: Operand) -> Self {
-        match operand.0 {
-            OperandEnum::Number(n) => n.to_string().as_str(),
-            OperandEnum::String(s) => s.as_str(),
+
+
+impl From<&Operand> for String {
+    fn from(operand: &Operand) -> Self {
+        match &operand.0 {
+            OperandEnum::Number(n) => n.to_string(),
+            OperandEnum::String(s) => s.clone(),
         }
     }
 }
 
-impl From<&Operand> for &str {
-    fn from(operand: &Operand) -> Self {
-        match &operand.0 {
-            OperandEnum::Number(n) => n.to_string().as_str(),
-            OperandEnum::String(s) => s.as_str(),
+
+impl From<Operand> for String {
+    fn from(operand: Operand) -> Self {
+        match operand.0 {
+            OperandEnum::Number(n) => n.to_string(),
+            OperandEnum::String(s) => s,
         }
     }
 }
+
 
 impl OperationList {}
 

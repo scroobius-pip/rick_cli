@@ -25,11 +25,12 @@ impl OperationListEvaluator for MockRequest {
     ) -> Result<RMResponse, Box<dyn Error>> {
         let result = match operation_list.0[0] {
             Operation::Root(Root::CHARACTERS) => {
-                let builder = CharactersRequest::new("https://rickandmortyapi.com");
+                let mut builder = CharactersRequest::new("https://rickandmortyapi.com");
                 for operation in operation_list.0.iter() {
                     match operation {
                         Operation::Name(name) => {
-                            builder.name(name.into());
+                            let name: String = name.into();
+                            builder.name(name.as_str());
                         }
                         Operation::Page(page) => {
                             // builder.page(page);
