@@ -5,10 +5,15 @@ mod lib;
 
 // #[derive(Parser)]
 struct Args {
-    proxy: bool,
+    mode: Mode
 }
 
-struct Operation;
+enum Mode {
+    Proxy,
+    Direct,
+}
+
+
 
 
 
@@ -25,8 +30,3 @@ fn main() {
     // }
 }
 
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {}
-}

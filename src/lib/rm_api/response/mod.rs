@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 
-use crate::lib::query_language::{Operand, Operation, OperationList, OperationListEvaluator};
+use crate::lib::query_language::{operation::*, operation_list::*};
 
 use super::entities::{CharacterPage, EpisodePage, LocationPage};
 
@@ -23,9 +23,9 @@ impl OperationListEvaluator for RMResponse {
         let result = match &self.0 {
             RMResponseEnum::Characters(page) => {
                 let mut new_page = page.clone();
-                for operation in operation_list.0.iter() {
-                    match operation {
-                        Operation::Contains(field_name, field_value) => {
+                for operation in operation_list.iter() {
+                    match &operation.0 {
+                        OperationEnum::Contains(field_name, field_value) => {
                             let field_name: String = field_name.into();
                             let field_value_check: String = field_value.into();
                             let new_page_result = new_page
@@ -46,10 +46,10 @@ impl OperationListEvaluator for RMResponse {
                                 .collect::<Vec<_>>();
                             new_page.results = new_page_result;
                         }
-                        Operation::Length(_, _) => {}
-                        Operation::Index(_) => {}
-                        Operation::Sort(_, _) => {}
-                        Operation::Pick(_) => {}
+                        OperationEnum::Length(_, _) => {}
+                        OperationEnum::Index(_) => {}
+                        OperationEnum::Sort(_, _) => {}
+                        OperationEnum::Pick(_) => {}
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
@@ -58,8 +58,8 @@ impl OperationListEvaluator for RMResponse {
             RMResponseEnum::Episodes(page) => {
                 let mut new_page = page.clone();
                 for operation in operation_list.0.iter() {
-                    match operation {
-                        Operation::Contains(field_name, field_value) => {
+                    match &operation.0 {
+                        OperationEnum::Contains(field_name, field_value) => {
                             let field_name: String = field_name.into();
                             let field_value_check: String = field_value.into();
                             let new_page_result = new_page
@@ -78,10 +78,10 @@ impl OperationListEvaluator for RMResponse {
                                 .collect::<Vec<_>>();
                             new_page.results = new_page_result;
                         }
-                        Operation::Length(_, _) => {}
-                        Operation::Index(_) => {}
-                        Operation::Sort(_, _) => {}
-                        Operation::Pick(_) => {}
+                        OperationEnum::Length(_, _) => {}
+                        OperationEnum::Index(_) => {}
+                        OperationEnum::Sort(_, _) => {}
+                        OperationEnum::Pick(_) => {}
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
@@ -90,8 +90,8 @@ impl OperationListEvaluator for RMResponse {
             RMResponseEnum::Locations(page) => {
                 let mut new_page = page.clone();
                 for operation in operation_list.0.iter() {
-                    match operation {
-                        Operation::Contains(field_name, field_value) => {
+                    match &operation.0 {
+                        OperationEnum::Contains(field_name, field_value) => {
                             let field_name: String = field_name.into();
                             let field_value_check: String = field_value.into();
                             let new_page_result = new_page
@@ -110,10 +110,10 @@ impl OperationListEvaluator for RMResponse {
                                 .collect::<Vec<_>>();
                             new_page.results = new_page_result;
                         }
-                        Operation::Length(_, _) => {}
-                        Operation::Index(_) => {}
-                        Operation::Sort(_, _) => {}
-                        Operation::Pick(_) => {}
+                        OperationEnum::Length(_, _) => {}
+                        OperationEnum::Index(_) => {}
+                        OperationEnum::Sort(_, _) => {}
+                        OperationEnum::Pick(_) => {}
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
@@ -129,16 +129,19 @@ impl OperationListEvaluator for RMResponse {
 mod tests {
     use rocket::tokio;
 
-    use crate::lib::{query_language::*, rm_api::entities::*};
+    use crate::lib::{
+        query_language::{operand::{OperandEnum, Operand}, },
+        rm_api::entities::*,
+    };
 
     use super::*;
 
-
     #[tokio::test]
     async fn single_contains_operation_characters() {
-        let operation_list = OperationList(vec![
-            Operation::Contains(Operand(OperandEnum::String("name".into())), Operand(OperandEnum::String("xxxxx".into()))),
-        ]);
+        let operation_list = OperationList(vec![Operation(OperationEnum::Contains(
+            Operand(OperandEnum::String("name".into())),
+            Operand(OperandEnum::String("xxxxx".into())),
+        ))]);
         let response = RMResponse(RMResponseEnum::Characters(CharacterPage {
             info: Info {
                 count: 1,
@@ -146,14 +149,14 @@ mod tests {
                 next: None,
                 prev: None,
             },
-            results: vec![Character {          
+            results: vec![Character {
                 name: "Rick Sanchez".into(),
                 ..Default::default()
             }],
         }));
 
         let evaluated_response = response.evaluate_op(&operation_list).await.unwrap();
-        
+
         match evaluated_response.0 {
             RMResponseEnum::Characters(page) => {
                 assert_eq!(page.results.len(), 0);
@@ -161,9 +164,10 @@ mod tests {
             _ => {}
         }
 
-        let operation_list = OperationList(vec![
-            Operation::Contains(Operand(OperandEnum::String("name".into())), Operand(OperandEnum::String("Rick".into()))),
-        ]);
+        let operation_list = OperationList(vec![Operation(OperationEnum::Contains(
+            Operand(OperandEnum::String("name".into())),
+            Operand(OperandEnum::String("Rick".into())),
+        ))]);
 
         let evaluated_response = response.evaluate_op(&operation_list).await.unwrap();
         match evaluated_response.0 {
@@ -177,10 +181,16 @@ mod tests {
     #[tokio::test]
     async fn multiple_contains_operation_characters() {
         let operation_list = OperationList(vec![
-            Operation::Contains(Operand(OperandEnum::String("name".into())), Operand(OperandEnum::String("Rick".into()))),
-            Operation::Contains(Operand(OperandEnum::String("status".into())), Operand(OperandEnum::String("Alive".into()))),
+            Operation(OperationEnum::Contains(
+                Operand(OperandEnum::String("name".into())),
+                Operand(OperandEnum::String("Rick".into())),
+            )),
+            Operation(OperationEnum::Contains(
+                Operand(OperandEnum::String("status".into())),
+                Operand(OperandEnum::String("Alive".into())),
+            )),
         ]);
-        
+
         let response = RMResponse(RMResponseEnum::Characters(CharacterPage {
             info: Info {
                 count: 1,
@@ -188,7 +198,7 @@ mod tests {
                 next: None,
                 prev: None,
             },
-            results: vec![Character {          
+            results: vec![Character {
                 name: "Rick Sanchez".into(),
                 status: "Alive".into(),
                 ..Default::default()
@@ -196,7 +206,7 @@ mod tests {
         }));
 
         let evaluated_response = response.evaluate_op(&operation_list).await.unwrap();
-        
+
         match evaluated_response.0 {
             RMResponseEnum::Characters(page) => {
                 assert_eq!(page.results.len(), 1);
@@ -205,8 +215,14 @@ mod tests {
         }
 
         let operation_list = OperationList(vec![
-            Operation::Contains(Operand(OperandEnum::String("name".into())), Operand(OperandEnum::String("Rick".into()))),
-            Operation::Contains(Operand(OperandEnum::String("status".into())), Operand(OperandEnum::String("Dead".into()))),
+            Operation(OperationEnum::Contains(
+                Operand(OperandEnum::String("name".into())),
+                Operand(OperandEnum::String("Rick".into())),
+            )),
+            Operation(OperationEnum::Contains(
+                Operand(OperandEnum::String("status".into())),
+                Operand(OperandEnum::String("Dead".into())),
+            )),
         ]);
 
         let evaluated_response = response.evaluate_op(&operation_list).await.unwrap();

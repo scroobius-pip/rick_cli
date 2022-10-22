@@ -1,4 +1,4 @@
-use crate::lib::query_language::{OperationListEvaluator, OperationList};
+
 
 pub trait RequestURLBuilder {
     fn build_url(&self) -> String;
@@ -80,14 +80,14 @@ mod tests {
     }
 
     #[test]
-    fn calling_name_twice() {
+    fn calling_name_twice_should_overwrite() {
         let url = EpisodesRequest::new("https://rickandmortyapi.com", vec![1, 2, 3])
             .name("rick")
             .name("morty")
             .build_url();
         assert_eq!(
             url,
-            "https://rickandmortyapi.com/api/episode/1,2,3? name=morty"
+            "https://rickandmortyapi.com/api/episode/1,2,3?name=morty"
         );
     }
 }

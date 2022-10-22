@@ -28,5 +28,6 @@ mod tests {
             .name("rick")
             .build_url();
         let response = MockRequest.get_characters(url).await;
+        assert!(response.is_ok());
     }
 }

@@ -1,11 +1,7 @@
 use std::error::Error;
-
 use async_trait::async_trait;
-
-use crate::lib::query_language::*;
-
+use crate::lib::query_language::{*, operation::{OperationEnum, Root}, operation_list::{OperationList, OperationListEvaluator}};
 use self::builder::{CharactersRequest, RequestURLBuilder};
-
 use super::{
     entities::*,
     response::{RMResponse, RMResponseEnum},
@@ -23,16 +19,16 @@ impl OperationListEvaluator for MockRequest {
         &self,
         operation_list: &OperationList,
     ) -> Result<RMResponse, Box<dyn Error>> {
-        let result = match operation_list.0[0] {
-            Operation::Root(Root::CHARACTERS) => {
+        let result = match operation_list[0].0{
+            OperationEnum::Root(Root::CHARACTERS) => {
                 let mut builder = CharactersRequest::new("https://rickandmortyapi.com");
                 for operation in operation_list.0.iter() {
-                    match operation {
-                        Operation::Name(name) => {
+                    match &operation.0 {
+                        OperationEnum::Name(name) => {
                             let name: String = name.into();
                             builder.name(name.as_str());
                         }
-                        Operation::Page(page) => {
+                        OperationEnum::Page(page) => {
                             // builder.page(page);
                         }
                         _ => {} // other operations are only handled after the request is made. e.g the implementation of OperationListEvaluator on RMResponse
@@ -44,7 +40,7 @@ impl OperationListEvaluator for MockRequest {
                     .await
                     .map(|response| RMResponse(RMResponseEnum::Characters(response)))
             }
-            _ => Err("".into()),
+            _ => Err("Invalid Root".into()),
         };
         result
     }
