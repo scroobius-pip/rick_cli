@@ -15,7 +15,7 @@ pub struct MockRequest;
 
 #[async_trait]
 impl OperationListEvaluator for MockRequest {
-    async fn evaluate_op(
+     async fn evaluate_op(
         &self,
         operation_list: &OperationList,
     ) -> Result<RMResponse, Box<dyn Error>> {

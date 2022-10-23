@@ -1,6 +1,6 @@
 mod app;
 mod lib;
-use std::error::Error;
+use std::{error::Error, sync::mpsc, thread};
 
 use app::init_app;
 // use lib::rm_api::Rickuest;
@@ -18,17 +18,17 @@ enum Mode {
 }
 
 fn main() -> Result<(), Box<dyn Error>> {
-    //    RICK AND MORTY API
-    // TYPE A QUERY TO REQUEST DATA FROM THE RICK AND MORTY API
-    // SYNTAX: CHARACTER::Name(rick)::Page(1)::Contains(rick,name)::Length(10, episode)::Index(0)::Sort(ASC, name)
+    let (send_requests, rx) = mpsc::channel::<String>();
+    let render_thread = thread::spawn(move || {
+        init_app(send_requests).unwrap();
+    });
 
-    // let args = Args::parse();
+    for request in rx {
+        // println!("{}", request);
+    }
 
-    // if args.proxy {
-    //     println!("Proxy mode enabled");
-    //
 
-    // setup terminal
-    init_app()?;
+    render_thread.join().unwrap();
+
     Ok(())
 }
