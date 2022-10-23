@@ -19,9 +19,10 @@ pub enum OperationEnum {
     /// name of field, value field should contain
     Contains(Operand, Operand),
     Length(Operand, Operand),
+    Limit(Operand),
     Index(Operand),
     Sort(Operand, Operand),
-    Pick(Operand),
+  
 }
 
 #[derive(Debug, PartialEq)]
@@ -59,8 +60,12 @@ impl From<Operation> for String {
                     String::from(operand)
                 )
             }
-            OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
+            // OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
             OperationEnum::Dimension(operand) => format!("DIMENSION({})", String::from(operand)),
+            OperationEnum::Limit(operand) => format!("LIMIT({})", String::from(operand)),
+          
+
+
         }
     }
 }
@@ -98,7 +103,8 @@ impl From<&Operation> for String {
                 )
             }
             OperationEnum::Dimension(operand) => format!("DIMENSION({})", String::from(operand)),
-            OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
+            OperationEnum::Limit(operand) => format!("LIMIT({})", String::from(operand)),
+            // OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
         }
     }
 }
@@ -162,6 +168,32 @@ impl Operation {
             .token(r"DIMENSION\((.*?)\)", |_, value, _| {
                 Some(Operation(OperationEnum::Dimension(Operand(
                     OperandEnum::String(Operation::remove_symbols(value, "DIMENSION")),
+                ))))
+            })
+            .token(r"SORT\((.*?), (.*?)\)", |_, value, _| {
+                let value = Operation::remove_symbols(value, "SORT");
+                let mut split = value.split(", ");
+                let first = split.next().unwrap();
+                let second = split.next().unwrap();
+
+                //first must be either ASC or DESC, fallback to ASC
+                let sort_operator = match first {
+                    "ASC" | "DSC" => first,
+                    _ => "ASC",
+                };
+
+                Some(Operation(OperationEnum::Sort(
+                    Operand(OperandEnum::String(sort_operator.to_string())),
+                    Operand(OperandEnum::String(second.to_string())),
+                )))
+            })
+            .token(r"LIMIT\([0-9]*\)", |_, value, _| {
+                Some(Operation(OperationEnum::Limit(Operand(
+                    OperandEnum::Number(
+                        Operation::remove_symbols(value, "LIMIT")
+                            .parse()
+                            .unwrap_or(0.0),
+                    ),
                 ))))
             })
             .build()?;
@@ -249,6 +281,41 @@ mod tests {
         let parsed_operation = Operation::parse_str("DIMENSION(C-137)").unwrap().0;
         let expected_operation =
             OperationEnum::Dimension(Operand(OperandEnum::String("C-137".to_string())));
+
+        assert_eq!(parsed_operation, expected_operation);
+    }
+
+    #[test]
+    fn test_parse_str_sort() {
+        let parsed_operation = Operation::parse_str("SORT(ASC, name)").unwrap().0;
+        let expected_operation = OperationEnum::Sort(
+            Operand(OperandEnum::String("ASC".to_string())),
+            Operand(OperandEnum::String("name".to_string())),
+        );
+
+        assert_eq!(parsed_operation, expected_operation);
+
+        let parsed_operation = Operation::parse_str("SORT(DSC, name)").unwrap().0;
+        let expected_operation = OperationEnum::Sort(
+            Operand(OperandEnum::String("DSC".to_string())),
+            Operand(OperandEnum::String("name".to_string())),
+        );
+
+        assert_eq!(parsed_operation, expected_operation);
+
+        let parsed_operation = Operation::parse_str("SORT(INValid, name)").unwrap().0;
+        let expected_operation = OperationEnum::Sort(
+            Operand(OperandEnum::String("ASC".to_string())),
+            Operand(OperandEnum::String("name".to_string())),
+        );
+
+        assert_eq!(parsed_operation, expected_operation);
+    }
+
+    #[test]
+    fn test_parse_str_limit() {
+        let parsed_operation = Operation::parse_str("LIMIT(10)").unwrap().0;
+        let expected_operation = OperationEnum::Limit(Operand(OperandEnum::Number(10.0)));
 
         assert_eq!(parsed_operation, expected_operation);
     }

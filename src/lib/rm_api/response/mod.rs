@@ -49,7 +49,7 @@ impl OperationListEvaluator for RMResponse {
                         OperationEnum::Length(_, _) => {}
                         OperationEnum::Index(_) => {}
                         OperationEnum::Sort(_, _) => {}
-                        OperationEnum::Pick(_) => {}
+                       
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
@@ -81,7 +81,7 @@ impl OperationListEvaluator for RMResponse {
                         OperationEnum::Length(_, _) => {}
                         OperationEnum::Index(_) => {}
                         OperationEnum::Sort(_, _) => {}
-                        OperationEnum::Pick(_) => {}
+                        // OperationEnum::Pick(_) => {}
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
@@ -113,7 +113,7 @@ impl OperationListEvaluator for RMResponse {
                         OperationEnum::Length(_, _) => {}
                         OperationEnum::Index(_) => {}
                         OperationEnum::Sort(_, _) => {}
-                        OperationEnum::Pick(_) => {}
+                        // OperationEnum::Pick(_) => {}
                         _ => {} // other operations are only handled before the request is made. e.g the implementation of OperationListEvaluator on MockRequest
                     }
                 }
