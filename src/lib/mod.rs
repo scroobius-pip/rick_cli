@@ -7,8 +7,8 @@ mod tests {
     use rocket::tokio;
 
     use crate::lib::{
-        query_language::{operation::*, operation_list::*},
-        rm_api::{entities::CharacterPage, request::MockRequest, response::RMResponseEnum},
+        query_language::{operation_list::*},
+        rm_api::{request::MockRequest, response::RMResponseEnum},
     };
 
     #[tokio::test]
@@ -38,9 +38,5 @@ mod tests {
             RMResponseEnum::Episodes(_) => panic!(),
             RMResponseEnum::Locations(_) => panic!(),
         }
-
-
-        
-
     }
 }
