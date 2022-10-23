@@ -29,10 +29,11 @@ There are two kinds of operations: operations for constructing a query, and oper
     - `CHARACTERS::CONTAINS(status, ive)`
     - `CHARACTERS::CONTAINS(species, man)`
     - `LOCATION::CONTAINS(name, C12)::CONTAINS(status, ive)::CONTAINS(id, 1)`
-- SORT(string, ASC|DSC) -
+- SORT(ASC|DSC, string) -
     - `CHARACTERS::SORT(ASC, name)`
     - `CHARACTERS::SORT(DSC, id)`
-    - `LOCATION::SORT(ASC, residents)`
+    - `LOCATION::SORT(ASC, residents)` - Sorts by the number of residents in the location
+    - `LOCATION::SORT(ASC, created)` - Sorts by the date the location was created 
 - LIMIT(number) -
     - `CHARACTERS::LIMIT(10)`
     - `LOCATION::LIMIT(5)`

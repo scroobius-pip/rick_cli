@@ -18,3 +18,4 @@ regex-lexer-lalrpop = "0.3.0"
 # futures = "0.3.25"
 serde = {version = "1.0.147", features = ["derive"]}
 tokio = {version = "1", features = ["full"]}
+chrono = "0.4.22"

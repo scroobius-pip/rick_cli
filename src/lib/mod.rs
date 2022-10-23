@@ -8,12 +8,6 @@ use self::{
 pub mod query_language;
 pub mod rm_api;
 
-// pub async fn mock_query_api(input: &str) -> Result<RMResponseEnum, Box<dyn Error>> {
-//     let operation_list = OperationList::parse_str(input)?;
-//     let response = MockRequest.evaluate_op(&operation_list).await?;
-//     let evaluated_response = response.evaluate_op(&operation_list).await?.0;
-//     Ok(evaluated_response)
-// }
 
 pub async fn query_api<T: OperationListEvaluator>(
     request: T,
