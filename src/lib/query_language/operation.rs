@@ -5,6 +5,7 @@ use std::{error::Error, ops::Deref};
 #[derive(Debug, PartialEq, Clone)]
 pub enum Root {
     CHARACTERS,
+    // EPISODES(Operand),
     EPISODES,
     LOCATIONS,
 }
@@ -14,6 +15,7 @@ pub enum OperationEnum {
     Root(Root), //Every operation starts with a root
     Name(Operand),
     Page(Operand),
+    Dimension(Operand),
     /// name of field, value field should contain
     Contains(Operand, Operand),
     Length(Operand, Operand),
@@ -58,6 +60,7 @@ impl From<Operation> for String {
                 )
             }
             OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
+            OperationEnum::Dimension(operand) => format!("DIMENSION({})", String::from(operand)),
         }
     }
 }
@@ -94,6 +97,7 @@ impl From<&Operation> for String {
                     String::from(operand)
                 )
             }
+            OperationEnum::Dimension(operand) => format!("DIMENSION({})", String::from(operand)),
             OperationEnum::Pick(operand) => format!("PICK({})", String::from(operand)),
         }
     }
@@ -143,6 +147,22 @@ impl Operation {
                     Operand(OperandEnum::String(first.to_string())),
                     Operand(OperandEnum::String(second.to_string())),
                 )))
+            })
+            .token(r"LENGTH\((.*?), (.*?)\)", |_, value, _| {
+                let value = Operation::remove_symbols(value, "LENGTH");
+                let mut split = value.split(", ");
+                let first = split.next().unwrap();
+                let second = split.next().unwrap();
+
+                Some(Operation(OperationEnum::Length(
+                    Operand(OperandEnum::String(first.to_string())),
+                    Operand(OperandEnum::String(second.to_string())),
+                )))
+            })
+            .token(r"DIMENSION\((.*?)\)", |_, value, _| {
+                Some(Operation(OperationEnum::Dimension(Operand(
+                    OperandEnum::String(Operation::remove_symbols(value, "DIMENSION")),
+                ))))
             })
             .build()?;
 
@@ -209,6 +229,26 @@ mod tests {
             Operand(OperandEnum::String("name".to_string())),
             Operand(OperandEnum::String("Morty".to_string())),
         );
+
+        assert_eq!(parsed_operation, expected_operation);
+    }
+
+    #[test]
+    fn test_parse_str_length() {
+        let parsed_operation = Operation::parse_str("LENGTH(name, 3)").unwrap().0;
+        let expected_operation = OperationEnum::Length(
+            Operand(OperandEnum::String("name".to_string())),
+            Operand(OperandEnum::Number(3.0)),
+        );
+
+        assert_eq!(parsed_operation, expected_operation);
+    }
+
+    #[test]
+    fn test_parse_str_dimension() {
+        let parsed_operation = Operation::parse_str("DIMENSION(C-137)").unwrap().0;
+        let expected_operation =
+            OperationEnum::Dimension(Operand(OperandEnum::String("C-137".to_string())));
 
         assert_eq!(parsed_operation, expected_operation);
     }

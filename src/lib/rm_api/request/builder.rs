@@ -19,6 +19,11 @@ impl CharactersRequest {
         self.0.push(format!("name={}", name));
         self
     }
+
+    pub fn page(&mut self, page: u32) -> &mut Self {
+        self.0.push(format!("page={}", page));
+        self
+    }
 }
 
 impl RequestURLBuilder for CharactersRequest {
@@ -46,6 +51,38 @@ impl EpisodesRequest {
         self.0.push(format!("name={}", name));
         self
     }
+
+    pub fn page(&mut self, page: u32) -> &mut Self {
+        self.0.push(format!("page={}", page));
+        self
+    }
+}
+
+#[derive(Clone)]
+pub struct LocationsRequest(Vec<String>);
+impl LocationsRequest {
+    pub fn new(domain: &str) -> Self {
+        LocationsRequest(vec![format!(
+            "{}{}",
+            domain.to_string(),
+            "/api/location/?".to_string()
+        )])
+    }
+
+    pub fn name(&mut self, name: &str) -> &mut Self {
+        self.0.push(format!("name={}", name));
+        self
+    }
+
+    pub fn page(&mut self, page: u32) -> &mut Self {
+        self.0.push(format!("page={}", page));
+        self
+    }
+
+    pub fn dimension(&mut self, dimension: &str) -> &mut Self {
+        self.0.push(format!("dimension={}", dimension));
+        self
+    }
 }
 
 impl RequestURLBuilder for EpisodesRequest {
@@ -55,6 +92,16 @@ impl RequestURLBuilder for EpisodesRequest {
         format!("{}{}", first, rest)
     }
 }
+
+impl RequestURLBuilder for LocationsRequest {
+    fn build_url(&self) -> String {
+        let first = self.0.first().unwrap();
+        let rest = self.0[1..].join("&");
+        format!("{}{}", first, rest)
+    }
+}
+
+
 
 #[cfg(test)]
 mod tests {
@@ -90,4 +137,26 @@ mod tests {
             "https://rickandmortyapi.com/api/episode/1,2,3?name=morty"
         );
     }
+
+    #[test]
+    fn test_locations_request() {
+        let url = LocationsRequest::new("https://rickandmortyapi.com")
+            .name("Testicle Monster Dimension")
+            .build_url();
+        assert_eq!(
+            url,
+            "https://rickandmortyapi.com/api/location/?name=Testicle Monster Dimension"
+        );
+
+        let url = LocationsRequest::new("https://rickandmortyapi.com")
+            .name("Testicle Monster Dimension")
+            .dimension("C-137")
+            .build_url();
+
+        assert_eq!(
+            url,
+            "https://rickandmortyapi.com/api/location/?name=Testicle Monster Dimension&dimension=C-137"
+        );
+    }
+
 }

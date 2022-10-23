@@ -1,11 +1,13 @@
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq,Clone)]
 pub enum OperandEnum {
     Number(f32),
     String(String),
-    // List(Vec<T>),
+   
+    // NumberList(Vec<f32>),
+    // StringList(Vec<String>),
 }
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Operand(pub OperandEnum);
 
 impl From<Operand> for f32 {
