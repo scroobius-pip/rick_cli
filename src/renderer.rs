@@ -8,8 +8,9 @@ use std::{
     error::Error,
     fmt::Display,
     io::{self, stdout, Write},
+    sync::{mpsc::Sender, Mutex},
     thread,
-    time::Duration, sync::mpsc::Sender,
+    time::Duration,
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -24,10 +25,13 @@ use tui_input::{
     Input,
 };
 
-use crate::lib::{
-    query_language::operation_list::OperationList,
-    query_language::operation_list::OperationListEvaluator,
-    rm_api::{request::MockRequest, response::RMResponseEnum},
+use crate::{
+    lib::{
+        query_language::operation_list::OperationList,
+        query_language::operation_list::OperationListEvaluator,
+        rm_api::{request::MockRequest, response::RMResponseEnum},
+    },
+    AppState,
 };
 
 enum InputMode {
@@ -35,17 +39,12 @@ enum InputMode {
     Editing,
 }
 
-async fn query_api(input: &str) -> Result<RMResponseEnum, Box<dyn Error>> {
-    let operation_list = OperationList::parse_str(input)?;
-    let response = MockRequest.evaluate_op(&operation_list).await?;
-    let evaluated_response = response.evaluate_op(&operation_list).await?.0;
-    Ok(evaluated_response)
-}
 
-struct App {
+pub struct Renderer {
     input: Input,
     input_mode: InputMode,
-    results: Vec<ResultState>,
+    app_state: Mutex<AppState>,
+    tx: Sender<String>,
 }
 
 #[derive(Debug)]
@@ -54,52 +53,53 @@ struct ResultState {
     id: String,
 }
 
-impl Default for App {
-    fn default() -> App {
-        App {
+impl Renderer {
+    pub fn new(tx: Sender<String>, app_state: Mutex<AppState>) -> Self {
+        Self {
             input_mode: InputMode::Editing,
             input: Input::default(),
-            results: vec![],
+            app_state,
+            tx,
         }
     }
-}
 
-pub fn init_app(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
-    enable_raw_mode()?;
-    let mut stdout = io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+    pub fn start(self) -> Result<(), Box<dyn Error>> {
+        enable_raw_mode()?;
+        let mut stdout = io::stdout();
+        execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
+        let backend = CrosstermBackend::new(stdout);
+        let mut terminal = Terminal::new(backend)?;
+        let res = run_app(&mut terminal, self);
+        // restore terminal
+        disable_raw_mode()?;
+        execute!(
+            terminal.backend_mut(),
+            LeaveAlternateScreen,
+            DisableMouseCapture
+        )?;
+        terminal.show_cursor()?;
+        if let Err(err) = res {
+            println!("{:?}", err)
+        }
 
-    // create app and run it
-    let app = App::default();
-    let res = run_app(&mut terminal, app, &tx);
-
-    // restore terminal
-    disable_raw_mode()?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )?;
-    terminal.show_cursor()?;
-
-    if let Err(err) = res {
-        println!("{:?}", err)
+        Ok(())
     }
-
-    Ok(())
 }
 
-fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, tx: &Sender<String>) -> io::Result<()> {
+// pub fn init_app(tx: Sender<String>) -> Result<(), Box<dyn Error>> {
+
+// }
+
+fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut renderer: Renderer) -> io::Result<()> {
+    let tx = renderer.tx.clone();
     loop {
-        terminal.draw(|f| ui(f, &mut app))?;
+        terminal.draw(|f| ui(f, &mut renderer))?;
 
         if let Event::Key(key) = event::read()? {
-            match app.input_mode {
+            match renderer.input_mode {
                 InputMode::Normal => match key.code {
                     KeyCode::Char('e') => {
-                        app.input_mode = InputMode::Editing;
+                        renderer.input_mode = InputMode::Editing;
                     }
                     KeyCode::Char('q') => {
                         return Ok(());
@@ -110,7 +110,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, tx: &Sender<Str
                     KeyCode::Enter => {
                         // app.results.push(app.input.value().into());
                         // let new_query = query_api(&app.input.value());
-                        tx.send(app.input.value().to_string()).unwrap();
+                        tx.send(renderer.input.value().to_string()).unwrap();
                         // add new_query to thread pool
                         // let new_query = thread::spawn(move || {
                         //     let new_query = new_query.await;
@@ -119,10 +119,10 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, tx: &Sender<Str
                         // app.input.reset();
                     }
                     KeyCode::Esc => {
-                        app.input_mode = InputMode::Normal;
+                        renderer.input_mode = InputMode::Normal;
                     }
                     _ => {
-                        app.input.handle_event(&Event::Key(key));
+                        renderer.input.handle_event(&Event::Key(key));
                     }
                 },
             }
@@ -130,7 +130,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App, tx: &Sender<Str
     }
 }
 
-fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
+fn ui<B: Backend>(f: &mut Frame<B>, renderer: &Renderer) {
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .margin(2)
@@ -176,20 +176,23 @@ fn ui<B: Backend>(f: &mut Frame<B>, app: &App) {
     f.render_widget(help_message, chunks[0]);
 
     let width = chunks[0].width.max(3) - 3; // keep 2 for borders and 1 for cursor
-    let scroll = (app.input.cursor() as u16).max(width) - width;
-    let input = Paragraph::new(app.input.value())
+    let scroll = (renderer.input.cursor() as u16).max(width) - width;
+    let input = Paragraph::new(renderer.input.value())
         .style(Style::default().fg(Color::Yellow))
         .scroll((0, scroll))
         .block(Block::default().borders(Borders::ALL).title("Input"));
     f.render_widget(input, chunks[1]);
     f.set_cursor(
         // Put cursor past the end of the input text
-        chunks[1].x + (app.input.cursor() as u16).min(width) + 1,
+        chunks[1].x + (renderer.input.cursor() as u16).min(width) + 1,
         // Move one line down, from the border to the input line
         chunks[1].y + 1,
     );
 
-    let messages: Vec<ListItem> = app
+    let messages: Vec<ListItem> = renderer
+        .app_state
+        .lock()
+        .unwrap()
         .results
         .iter()
         .enumerate()
