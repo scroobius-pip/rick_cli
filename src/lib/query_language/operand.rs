@@ -1,10 +1,11 @@
 
+#[derive(Debug, PartialEq)]
 pub enum OperandEnum {
     Number(f32),
     String(String),
     // List(Vec<T>),
 }
-
+#[derive(Debug, PartialEq)]
 pub struct Operand(pub OperandEnum);
 
 impl From<Operand> for f32 {
@@ -20,10 +21,29 @@ impl From<&Operand> for f32 {
     fn from(operand: &Operand) -> Self {
         match &operand.0 {
             OperandEnum::Number(n) => *n,
-            OperandEnum::String(s) => s.parse::<f32>().unwrap_or_default(),
+            OperandEnum::String(s) => s.parse::<f32>().unwrap_or(0.0),
         }
     }
 }
+
+impl From<Operand> for u32 {
+    fn from(operand: Operand) -> Self {
+        match operand.0 {
+            OperandEnum::Number(n) => n as u32,
+            OperandEnum::String(s) => s.parse::<u32>().unwrap_or(0),
+        }
+    }
+}
+
+impl From<&Operand> for u32 {
+    fn from(operand: &Operand) -> Self {
+        match &operand.0 {
+            OperandEnum::Number(n) => *n as u32,
+            OperandEnum::String(s) => s.parse::<u32>().unwrap_or(0),
+        }
+    }
+}
+
 
 impl From<&Operand> for String {
     fn from(operand: &Operand) -> Self {

@@ -56,7 +56,16 @@ mod parsing_tests {
     #[test]
     fn parsing_from_string() {
         let operation_list_string = "CHARACTERS::NAME(rick)";
-        // let parsed_operation_list = OperationList::parse(operation_list_string);
+        let parsed_operation_list = OperationList::parse_str(operation_list_string).unwrap();
+
+        let expected_operation_list = OperationList(vec![
+            Operation(OperationEnum::Root(Root::CHARACTERS)),
+            Operation(OperationEnum::Name(Operand(OperandEnum::String(
+                "rick".to_string(),
+            )))),
+        ]);
+
+        assert_eq!(parsed_operation_list, expected_operation_list);
      
     }
 }

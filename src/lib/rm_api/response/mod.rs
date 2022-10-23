@@ -4,7 +4,7 @@ use crate::lib::query_language::{operation::*, operation_list::*};
 
 use super::entities::{CharacterPage, EpisodePage, LocationPage};
 
-#[derive(Clone)]
+#[derive(Clone,PartialEq,Debug)]
 pub enum RMResponseEnum {
     Characters(CharacterPage),
     Episodes(EpisodePage),

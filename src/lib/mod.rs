@@ -8,18 +8,39 @@ mod tests {
 
     use crate::lib::{
         query_language::{operation::*, operation_list::*},
-        rm_api::{request::MockRequest, response::RMResponseEnum},
+        rm_api::{entities::CharacterPage, request::MockRequest, response::RMResponseEnum},
     };
 
     #[tokio::test]
     async fn simple_root_query() {
-        let operation_list = OperationList(vec![Operation(OperationEnum::Root(Root::CHARACTERS))]);
+        let query = "CHARACTERS::CONTAINS(name, xxxxxx)";
+        let operation_list = OperationList::parse_str(query).unwrap();
         let mock_response = MockRequest.evaluate_op(&operation_list).await.unwrap();
-        matches!(
-            mock_response,
-            super::rm_api::response::RMResponse(RMResponseEnum::Characters(_))
-        );
-        let new_mock_response = mock_response.evaluate_op(&operation_list).await.unwrap();
-        let d = new_mock_response.0;
+        let evaluated_response = mock_response.evaluate_op(&operation_list).await.unwrap().0;
+        
+        match evaluated_response {
+            RMResponseEnum::Characters(page) => {
+                assert_eq!(page.results.len(), 0)
+            }
+            RMResponseEnum::Episodes(_) => panic!(),
+            RMResponseEnum::Locations(_) => panic!(),
+        }
+
+        let query = "CHARACTERS::CONTAINS(name, Ri)";
+        let operation_list = OperationList::parse_str(query).unwrap();
+        let mock_response = MockRequest.evaluate_op(&operation_list).await.unwrap();
+        let evaluated_response = mock_response.evaluate_op(&operation_list).await.unwrap().0;
+        
+        match evaluated_response {
+            RMResponseEnum::Characters(page) => {
+                assert_eq!(page.results.len(), 1)
+            }
+            RMResponseEnum::Episodes(_) => panic!(),
+            RMResponseEnum::Locations(_) => panic!(),
+        }
+
+
+        
+
     }
 }

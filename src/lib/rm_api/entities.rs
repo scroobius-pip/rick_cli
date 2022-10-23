@@ -1,10 +1,10 @@
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct Page<T> {
     pub info: Info,
     pub results: Vec<T>,
 }
 
-#[derive(Default, Clone)]
+#[derive(Default, Clone, Debug, PartialEq)]
 pub struct Info {
     pub count: u32,
     pub pages: u32,
@@ -12,7 +12,7 @@ pub struct Info {
     pub prev: Option<String>,
 }
 
-#[derive(Default,Clone)]
+#[derive(Default,Clone, Debug, PartialEq)]
 pub struct Location {
     pub id: u32,
     pub name: String,
@@ -23,7 +23,7 @@ pub struct Location {
     pub created: String,
 }
 
-#[derive(Default,Clone)]
+#[derive(Default,Clone, Debug, PartialEq)]
 pub struct Episode {
     pub id: u32,
     pub name: String,
@@ -34,7 +34,7 @@ pub struct Episode {
     pub created: String,
 }
 
-#[derive(Default,Clone)]
+#[derive(Default,Clone, Debug, PartialEq)]
 pub struct Character {
     pub id: u32,
     pub name: String,

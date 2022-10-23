@@ -29,6 +29,7 @@ impl OperationListEvaluator for MockRequest {
                             builder.name(name.as_str());
                         }
                         OperationEnum::Page(page) => {
+                            let page_number: u32 = page.into();
                             // builder.page(page);
                         }
                         _ => {} // other operations are only handled after the request is made. e.g the implementation of OperationListEvaluator on RMResponse
