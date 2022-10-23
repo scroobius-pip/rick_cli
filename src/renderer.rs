@@ -8,7 +8,7 @@ use std::{
     error::Error,
     fmt::Display,
     io::{self, stdout, Write},
-    sync::{mpsc::Sender, Mutex},
+    sync::{mpsc::Sender, Mutex, MutexGuard, Arc},
     thread,
     time::Duration,
 };
@@ -43,7 +43,7 @@ enum InputMode {
 pub struct Renderer {
     input: Input,
     input_mode: InputMode,
-    app_state: Mutex<AppState>,
+    app_state: Arc<Mutex<AppState>>,
     tx: Sender<String>,
 }
 
@@ -54,7 +54,7 @@ struct ResultState {
 }
 
 impl Renderer {
-    pub fn new(tx: Sender<String>, app_state: Mutex<AppState>) -> Self {
+    pub fn new(tx: Sender<String>, app_state: Arc<Mutex<AppState>>) -> Self {
         Self {
             input_mode: InputMode::Editing,
             input: Input::default(),

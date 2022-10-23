@@ -13,9 +13,6 @@ pub trait Rickuest {
     async fn get_locations(self, url: String) -> Result<LocationPage, Box<dyn Error>>;
 }
 
-
-
-
 // tests
 #[cfg(test)]
 mod tests {
