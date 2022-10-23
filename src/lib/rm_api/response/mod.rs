@@ -127,7 +127,7 @@ impl OperationListEvaluator for RMResponse {
 // tests
 #[cfg(test)]
 mod tests {
-    use rocket::tokio;
+    use tokio;
 
     use crate::lib::{
         query_language::{operand::{OperandEnum, Operand}, },

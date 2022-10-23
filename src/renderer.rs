@@ -1,16 +1,13 @@
 use crossterm::{
-    cursor::{Hide, Show},
+
     event::{self, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{
     error::Error,
-    fmt::Display,
-    io::{self, stdout, Write},
-    sync::{mpsc::Sender, Mutex, MutexGuard, Arc},
-    thread,
-    time::Duration,
+    io::{self,},
+    sync::{mpsc::Sender, Mutex, Arc},
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -29,7 +26,7 @@ use crate::{
     lib::{
         query_language::operation_list::OperationList,
         query_language::operation_list::OperationListEvaluator,
-        rm_api::{request::MockRequest, response::RMResponseEnum},
+        rm_api::{request::mock_request::MockRequest, response::RMResponseEnum},
     },
     AppState,
 };
@@ -108,15 +105,7 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut renderer: Renderer) -> io
                 },
                 InputMode::Editing => match key.code {
                     KeyCode::Enter => {
-                        // app.results.push(app.input.value().into());
-                        // let new_query = query_api(&app.input.value());
                         tx.send(renderer.input.value().to_string()).unwrap();
-                        // add new_query to thread pool
-                        // let new_query = thread::spawn(move || {
-                        //     let new_query = new_query.await;
-                        //     new_query.unwrap()
-                        // });
-                        // app.input.reset();
                     }
                     KeyCode::Esc => {
                         renderer.input_mode = InputMode::Normal;
@@ -143,23 +132,6 @@ fn ui<B: Backend>(f: &mut Frame<B>, renderer: &Renderer) {
             .as_ref(),
         )
         .split(f.size());
-
-    // let (msg, style) = match app.input_mode {
-    //     InputMode::Normal => (
-    //         vec![
-    //             Span::raw("Press "),
-    //             Span::styled("q", Style::default().add_modifier(Modifier::BOLD)),
-    //             Span::raw(" to exit, "),
-    //             Span::styled("e", Style::default().add_modifier(Modifier::BOLD)),
-    //             Span::raw(" to start editing."),
-    //         ],
-    //         Style::default().add_modifier(Modifier::RAPID_BLINK),
-    //     ),
-    //     InputMode::Editing => (
-    //        ,
-    //         Style::default(),
-    //     ),
-    // };
 
     let msg = vec![
         Span::raw("Press "),
@@ -197,11 +169,11 @@ fn ui<B: Backend>(f: &mut Frame<B>, renderer: &Renderer) {
         .iter()
         .enumerate()
         .map(|(i, m)| {
-            let content = vec![Spans::from(Span::raw(format!("{}: {:?}", i, m)))];
+            let content = vec![Spans::from(Span::raw(format!("{}: {:?}", i, m.1.value)))];
             ListItem::new(content)
         })
         .collect();
     let messages =
         List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
     f.render_widget(messages, chunks[2]);
-}
+} 

@@ -2,15 +2,25 @@ use std::error::Error;
 
 use self::{
     query_language::operation_list::{OperationList, OperationListEvaluator},
-    rm_api::{request::MockRequest, response::RMResponseEnum},
+    rm_api::response::RMResponseEnum,
 };
 
 pub mod query_language;
 pub mod rm_api;
 
-pub async fn mock_query_api(input: &str) -> Result<RMResponseEnum, Box<dyn Error>> {
+// pub async fn mock_query_api(input: &str) -> Result<RMResponseEnum, Box<dyn Error>> {
+//     let operation_list = OperationList::parse_str(input)?;
+//     let response = MockRequest.evaluate_op(&operation_list).await?;
+//     let evaluated_response = response.evaluate_op(&operation_list).await?.0;
+//     Ok(evaluated_response)
+// }
+
+pub async fn query_api<T: OperationListEvaluator>(
+    request: T,
+    input: &str,
+) -> Result<RMResponseEnum, Box<dyn Error>> {
     let operation_list = OperationList::parse_str(input)?;
-    let response = MockRequest.evaluate_op(&operation_list).await?;
+    let response = request.evaluate_op(&operation_list).await?;
     let evaluated_response = response.evaluate_op(&operation_list).await?.0;
     Ok(evaluated_response)
 }
@@ -18,11 +28,11 @@ pub async fn mock_query_api(input: &str) -> Result<RMResponseEnum, Box<dyn Error
 // tests
 #[cfg(test)]
 mod tests {
-    use rocket::tokio;
+  use tokio;
 
     use crate::lib::{
         query_language::operation_list::*,
-        rm_api::{request::MockRequest, response::RMResponseEnum},
+        rm_api::{request::mock_request::MockRequest, response::RMResponseEnum},
     };
 
     #[tokio::test]

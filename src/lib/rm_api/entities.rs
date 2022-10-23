@@ -1,10 +1,12 @@
-#[derive(Default, Clone, Debug, PartialEq)]
+use serde::Deserialize;
+
+#[derive(Default, Clone, Debug, PartialEq, Deserialize)]
 pub struct Page<T> {
     pub info: Info,
     pub results: Vec<T>,
 }
 
-#[derive(Default, Clone, Debug, PartialEq)]
+#[derive(Default, Clone, Debug, PartialEq, Deserialize)]
 pub struct Info {
     pub count: u32,
     pub pages: u32,
@@ -12,10 +14,11 @@ pub struct Info {
     pub prev: Option<String>,
 }
 
-#[derive(Default,Clone, Debug, PartialEq)]
+#[derive(Default,Clone, Debug, PartialEq, Deserialize)]
 pub struct Location {
     pub id: u32,
     pub name: String,
+    #[serde(rename = "type")]
     pub _type: String,
     pub dimension: String,
     pub residents: Vec<String>,
@@ -23,7 +26,7 @@ pub struct Location {
     pub created: String,
 }
 
-#[derive(Default,Clone, Debug, PartialEq)]
+#[derive(Default,Clone, Debug, PartialEq, Deserialize)]
 pub struct Episode {
     pub id: u32,
     pub name: String,
@@ -34,12 +37,13 @@ pub struct Episode {
     pub created: String,
 }
 
-#[derive(Default,Clone, Debug, PartialEq)]
+#[derive(Default,Clone, Debug, PartialEq, Deserialize)]
 pub struct Character {
     pub id: u32,
     pub name: String,
     pub status: String,
     pub species: String,
+    #[serde(rename = "type")]
     pub _type: String,
     pub gender: String,
     pub image: String,

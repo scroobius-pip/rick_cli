@@ -16,10 +16,10 @@ pub trait Rickuest {
 // tests
 #[cfg(test)]
 mod tests {
-    use rocket::tokio;
+    use tokio;
 
     use super::request::builder::{CharactersRequest, RequestURLBuilder};
-    use super::request::MockRequest;
+    use super::request::mock_request::MockRequest;
     use super::Rickuest;
     // use super::*;
     #[tokio::test]
