@@ -1,13 +1,12 @@
 use crossterm::{
-
     event::{self, read, DisableMouseCapture, EnableMouseCapture, Event, KeyCode, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use std::{
     error::Error,
-    io::{self,},
-    sync::{mpsc::Sender, Mutex, Arc},
+    io::{self},
+    sync::{mpsc::Sender, Arc, Mutex},
 };
 use tui::{
     backend::{Backend, CrosstermBackend},
@@ -28,7 +27,7 @@ use crate::{
         query_language::operation_list::OperationListEvaluator,
         rm_api::{request::mock_request::MockRequest, response::RMResponseEnum},
     },
-    AppState,
+    AppState, ResultState,
 };
 
 enum InputMode {
@@ -36,18 +35,11 @@ enum InputMode {
     Editing,
 }
 
-
 pub struct Renderer {
     input: Input,
     input_mode: InputMode,
     app_state: Arc<Mutex<AppState>>,
     tx: Sender<String>,
-}
-
-#[derive(Debug)]
-struct ResultState {
-    value: Option<RMResponseEnum>,
-    id: String,
 }
 
 impl Renderer {
@@ -136,9 +128,9 @@ fn ui<B: Backend>(f: &mut Frame<B>, renderer: &Renderer) {
     let msg = vec![
         Span::raw("Press "),
         Span::styled("Esc", Style::default().add_modifier(Modifier::BOLD)),
-        Span::raw(" to stop editing, "),
-        Span::styled("Enter", Style::default().add_modifier(Modifier::BOLD)),
-        Span::raw(" to send query"),
+        Span::raw(" then "),
+        Span::styled(" q ", Style::default().add_modifier(Modifier::BOLD)),
+        Span::raw("to quit."),
     ];
     let style = Style::default();
 
@@ -161,19 +153,89 @@ fn ui<B: Backend>(f: &mut Frame<B>, renderer: &Renderer) {
         chunks[1].y + 1,
     );
 
-    let messages: Vec<ListItem> = renderer
+    renderer
         .app_state
         .lock()
         .unwrap()
         .results
-        .iter()
-        .enumerate()
-        .map(|(i, m)| {
-            let content = vec![Spans::from(Span::raw(format!("{}: {:?}", i, m.1.value)))];
-            ListItem::new(content)
-        })
-        .collect();
-    let messages =
-        List::new(messages).block(Block::default().borders(Borders::ALL).title("Messages"));
-    f.render_widget(messages, chunks[2]);
-} 
+        .values()
+        .for_each(|result_state|{
+            f.render_widget(create_response_enum_widget(result_state), chunks[2]);
+        });
+
+   
+}
+
+fn create_response_enum_widget(result_state: &ResultState) -> List {
+    let response = result_state.value.clone();
+
+    match response {
+        None => List::new(vec![ListItem::new(vec![Spans::from(Span::raw("None"))])]),
+        Some(RMResponseEnum::Characters(characters_page)) => {
+            let characters: Vec<ListItem> = characters_page
+                .results
+                .iter()
+                .map(|character| {
+                    let name_span =
+                        Span::styled(character.name.clone(), Style::default().fg(Color::Green));
+                    let id_span = Span::styled(
+                        format!("({}) ", character.id),
+                        Style::default().fg(Color::Yellow),
+                    );
+                    let status_span = match character.status.as_str() {
+                        "Alive" => Span::styled(
+                            format!(" [{}] ", character.status),
+                            Style::default().fg(Color::Green),
+                        ),
+                        "Dead" => Span::styled(
+                            format!(" [{}] ", character.status),
+                            Style::default().fg(Color::Red),
+                        ),
+                        _ => Span::styled(
+                            format!(" [{}] ", character.status),
+                            Style::default().fg(Color::Yellow),
+                        ),
+                      
+                    };
+                    ListItem::new(vec![Spans::from(vec![id_span, name_span, status_span])])
+                })
+                .collect();
+
+            List::new(characters).block(Block::default().borders(Borders::ALL).title("Characters"))
+        }
+        Some(RMResponseEnum::Episodes(episodes_page)) => {
+            let episodes: Vec<ListItem> = episodes_page
+                .results
+                .iter()
+                .map(|episode| {
+                    let name_span =
+                        Span::styled(episode.name.clone(), Style::default().fg(Color::Green));
+                    let id_span = Span::styled(
+                        format!("({})", episode.id),
+                        Style::default().fg(Color::Yellow),
+                    );
+                    ListItem::new(vec![Spans::from(vec![name_span, id_span])])
+                })
+                .collect();
+
+            List::new(episodes).block(Block::default().borders(Borders::ALL).title("Episodes"))
+        }
+        Some(RMResponseEnum::Locations(locations_page)) => {
+            let locations: Vec<ListItem> = locations_page
+                .results
+                .iter()
+                .map(|location| {
+                    let name_span =
+                        Span::styled(location.name.clone(), Style::default().fg(Color::Green));
+                    let id_span = Span::styled(
+                        format!("({})", location.id),
+                        Style::default().fg(Color::Yellow),
+                    );
+                    ListItem::new(vec![Spans::from(vec![name_span, id_span])])
+                })
+                .collect();
+
+            List::new(locations).block(Block::default().borders(Borders::ALL).title("Locations"))
+        }
+    }
+}

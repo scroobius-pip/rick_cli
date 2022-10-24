@@ -40,6 +40,6 @@ There are two kinds of operations: operations for constructing a query, and oper
     - `EPISODE::LIMIT(1)`
 
 All operations are chainable, and can be combined to create complex queries:
-- `CHARACTERS::NAME(rick)::PAGE(1)::SORT(ASC, name)::LIMIT(10)::CONTAINS(name, pickle)`
+- `CHARACTERS::NAME(rick)::PAGE(1)::SORT(ASC, name)::LIMIT(10)::CONTAINS(name, Alien)`
 
 

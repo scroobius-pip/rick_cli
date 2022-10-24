@@ -25,7 +25,7 @@ enum Mode {
     Direct,
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct ResultState {
     value: Option<RMResponseEnum>,
     id: String,
@@ -64,6 +64,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 async fn apply_request_state(request: String, app_state: Arc<Mutex<AppState>>) {
     let request_str = request.as_str();
     let mut state = app_state.lock().unwrap();
+    state.results.clear();
     state.results.insert(
         request_str.to_string(),
         ResultState {
